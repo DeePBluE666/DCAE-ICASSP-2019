@@ -239,3 +239,80 @@ model.fit_generator(
         epochs=100,
         validation_data=validation_generator,
         validation_steps=256, callbacks=callbacks)
+		
+#----------------------------------------get data----------------------------------#
+
+train_datagen = ImageDataGenerator(
+        rescale=1./255,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True)
+        
+train_generator = train_datagen.flow_from_directory(                  
+        '/home/dataset/ultraspnic/ult_data_train/',  
+        target_size=(150, 150),                                       
+        batch_size=32,
+        class_mode='categorical')                                          
+
+train_datagen2 = ImageDataGenerator(
+        rescale=1./255,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True)		
+
+train_generator2 = train_datagen2.flow_from_directory(                  
+        '/home/dataset/ultraspnic/ult_data_train2/',  
+        target_size=(150, 150),                                       
+        batch_size=32,
+        class_mode='categorical')
+		
+test_datagen = ImageDataGenerator(rescale=1./255)
+
+validation_generator = test_datagen.flow_from_directory(
+        '/home/dataset/ultraspnic/ult_data_test/',
+        target_size=(150, 150),
+        batch_size=32,
+        class_mode='categorical')
+		
+	
+
+#------------------------------build pre-train model--------------------------------------#
+base_model = DenseNet121(weights='None', include_top=False)
+x = base_model.output
+x = BatchNormalization()(x)
+x = GlobalAveragePooling2D()(x)
+x = Dense(512, activation='relu')(x)
+x = BatchNormalization()(x)
+predictions = Dense(4, activation='softmax')(x)
+model = Model(inputs=base_model.input, outputs=predictions)
+	
+model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy']) 
+	
+early_stopping =EarlyStopping(monitor='val_acc', patience=5)
+callbacks = [early_stopping,]
+
+model.fit_generator(
+        train_generator,
+        steps_per_epoch=1024,
+        epochs=100,
+        validation_data=validation_generator,
+        validation_steps=256, callbacks=callbacks)
+
+		
+#-----------------------------Transfer Leanring---------------------------------#
+#take DenseNet as an example
+
+
+#all layers are trainable
+
+	
+early_stopping =EarlyStopping(monitor='val_acc', patience=5)
+callbacks = [early_stopping,]
+
+model.fit_generator(
+        train_generator2,
+        steps_per_epoch=1024,
+        epochs=100,
+        validation_data=validation_generator,
+        validation_steps=256, callbacks=callbacks)
+		
